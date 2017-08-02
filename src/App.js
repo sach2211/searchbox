@@ -2,10 +2,13 @@ import React, { Component } from 'react';
 import request from 'superagent';
 import './App.css';
 import throttle from 'lodash.throttle';
+import lsc from 'lscache';
+// import { updateLocalStorageArray } from './search-utils.js';
 
-var flag = null;
+var reqInProgress = false;
 var searchSuggestionLimit = 5;
-var savedSearches = [{product: "your"}, {product: "saved"}, {product: "searches"}];
+var savedSearches = [];
+
 
 class App extends Component {
   constructor(props) {
@@ -21,27 +24,30 @@ class App extends Component {
       {q: q}
     ));
     
+    // set it in localstorage if available
+    // updateLocalStorageArray('sbss', q);
+
     // handle the case where search term is null (show top searches ???)
     if (q) {
       this.getSearchResults(q);
     } else {
-      flag && flag.abort();
+      reqInProgress && reqInProgress.abort();
       this.setState({ searchResults: savedSearches });
     }
   }
 
   getSearchResults(q) {
-    if (flag) {
-      console.log(" Flag was set aborting it ");
-      flag.abort();
+    if (reqInProgress) {
+      console.log(" reqInProgress was set aborting it ");
+      reqInProgress.abort();
     }
-    flag = request('https://crossorigin.me/http://developer.myntra.com/search/data/'+q)
+    reqInProgress = request('https://crossorigin.me/http://developer.myntra.com/search/data/'+q)
     .end((err, resp) => {
       if (err) {
         console.error("An error in response for term", q);
         return;
       }
-      flag = null;
+      reqInProgress = null;
       let x = resp.body.data.results.products || [];
       this.setState({searchResults: x.splice(0, searchSuggestionLimit)});
     })
@@ -55,7 +61,7 @@ class App extends Component {
             type="text"
             className="search-input"
             onChange={(e) => {
-                this.handleInputTerm(e.target.value)
+              this.handleInputTerm(e.target.value)
               }
             }
           />
