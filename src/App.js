@@ -1,21 +1,22 @@
 import React, { Component } from 'react';
 import request from 'superagent';
 import './App.css';
-import throttle from 'lodash.throttle';
-import lsc from 'lscache';
-// import { updateLocalStorageArray } from './search-utils.js';
+// import throttle from 'lodash.throttle';
+import { updateLocalStorageArray, getLocalStorageArray } from './search-utils.js';
 
 var reqInProgress = false;
 var searchSuggestionLimit = 5;
-var savedSearches = [];
 
+const getRecentSearches = () => (
+  getLocalStorageArray('sbss').splice(0, searchSuggestionLimit)
+)
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       q: '',
-      searchResults: savedSearches
+      searchResults: getRecentSearches()
     }
   }
 
@@ -25,14 +26,14 @@ class App extends Component {
     ));
     
     // set it in localstorage if available
-    // updateLocalStorageArray('sbss', q);
+    updateLocalStorageArray('sbss', {product: q});
 
     // handle the case where search term is null (show top searches ???)
     if (q) {
       this.getSearchResults(q);
     } else {
       reqInProgress && reqInProgress.abort();
-      this.setState({ searchResults: savedSearches });
+      this.setState({ searchResults: getRecentSearches() });
     }
   }
 
